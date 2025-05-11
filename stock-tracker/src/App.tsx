@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Container, TextField, Button, Typography, Box, Paper } from '@mui/material'
+import { Container, TextField, Button, Typography, Box, Paper, Table, TableContainer, TableHead, TableBody, TableRow, TableCell } from '@mui/material'
 import axios from 'axios'
 import BackgroundGraph from './components/BackgroundGraph'
 
@@ -20,6 +20,21 @@ interface StockData {
   changePercent: number;
   volume: number;
   marketCap: number;
+  logo: string;
+  profile: {
+    name: string;
+    description: string;
+    industry: string;
+    sector: string;
+    website: string;
+  };
+  earnings: {
+    date: string;
+    eps: number;
+    epsEstimate: number;
+    revenue: number;
+    revenueEstimate: number;
+  }[];
 }
 
 function App() {
@@ -38,14 +53,52 @@ function App() {
     setError('')
     
     try {
-      // Note: You'll need to replace this with your actual API key and endpoint
-      const response = await axios.get(`https://api.twelvedata.com/api_usage?apikey=your_api_key`)
-      setStockData(response.data)
+      const apiKey = import.meta.env.VITE_TWELVE_DATA_API_KEY;
+      if (!apiKey) {
+        throw new Error('API key not found');
+      }
+
+      // Fetch logo
+      const logoResponse = await axios.get(`https://api.twelvedata.com/logo?symbol=${ticker}&apikey=${apiKey}`);
+      
+      // Fetch current price
+      const quoteResponse = await axios.get(`https://api.twelvedata.com/quote?symbol=${ticker}&apikey=${apiKey}`);
+      
+      // Fetch profile
+      const profileResponse = await axios.get(`https://api.twelvedata.com/profile?symbol=${ticker}&apikey=${apiKey}`);
+      
+      // Fetch earnings calendar
+      const earningsResponse = await axios.get(`https://api.twelvedata.com/earnings_calendar?symbol=${ticker}&apikey=${apiKey}`);
+
+      if (quoteResponse.data.status === 'error') {
+        throw new Error(quoteResponse.data.message || 'Failed to fetch stock data');
+      }
+
+      const quoteData = quoteResponse.data;
+      const profileData = profileResponse.data;
+      
+      setStockData({
+        symbol: quoteData.symbol,
+        price: parseFloat(quoteData.close),
+        change: parseFloat(quoteData.change),
+        changePercent: parseFloat(quoteData.percent_change),
+        volume: parseInt(quoteData.volume),
+        marketCap: parseInt(quoteData.market_cap),
+        logo: logoResponse.data.url,
+        profile: {
+          name: profileData.name,
+          description: profileData.description,
+          industry: profileData.industry,
+          sector: profileData.sector,
+          website: profileData.website
+        },
+        earnings: earningsResponse.data.earnings
+      });
     } catch (err) {
-      setError('Failed to fetch stock data. Please try again.')
-      console.error('Error fetching stock data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch stock data. Please try again.');
+      console.error('Error fetching stock data:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -100,13 +153,13 @@ function App() {
       </Box>
 
       <Container 
-        maxWidth="sm" 
+        maxWidth="md" 
         sx={{ 
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          pt: '60px' // Add padding top to account for ticker tape
+          pt: '60px'
         }}
       >
         <Box sx={{ width: '100%' }}>
@@ -122,7 +175,7 @@ function App() {
               mb: 4
             }}
           >
-            my name Yang
+            Stock Tracker
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
@@ -158,26 +211,85 @@ function App() {
 
           {stockData && (
             <Paper elevation={3} sx={{ p: 3 }}>
-              <Typography variant="h5" gutterBottom>
-                {stockData.symbol}
-              </Typography>
-              <Typography variant="h4" color="black">
-                ${stockData.price.toFixed(2)}
-              </Typography>
-              <Typography
-                color="black"
-                gutterBottom
-              >
-                {stockData.change >= 0 ? '+' : ''}{stockData.change.toFixed(2)} ({stockData.changePercent.toFixed(2)}%)
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  Volume: {stockData.volume.toLocaleString()}
-                </Typography>
-                <Typography variant="body2">
-                  Market Cap: ${(stockData.marketCap / 1e9).toFixed(2)}B
-                </Typography>
+              {/* Logo and Basic Info */}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                {stockData.logo && (
+                  <Box
+                    component="img"
+                    src={stockData.logo}
+                    alt={`${stockData.symbol} logo`}
+                    sx={{ width: 100, height: 100, mr: 2 }}
+                  />
+                )}
+                <Box>
+                  <Typography variant="h5" gutterBottom>
+                    {stockData.symbol}
+                  </Typography>
+                  <Typography variant="h4" color="black">
+                    ${stockData.price.toFixed(2)}
+                  </Typography>
+                  <Typography
+                    color={stockData.change >= 0 ? 'success.main' : 'error.main'}
+                    gutterBottom
+                  >
+                    {stockData.change >= 0 ? '+' : ''}{stockData.change.toFixed(2)} ({stockData.changePercent.toFixed(2)}%)
+                  </Typography>
+                </Box>
               </Box>
+
+              {/* Earnings Calendar */}
+              {stockData.earnings && stockData.earnings.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Earnings Calendar
+                  </Typography>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Date</TableCell>
+                          <TableCell align="right">EPS</TableCell>
+                          <TableCell align="right">EPS Estimate</TableCell>
+                          <TableCell align="right">Revenue</TableCell>
+                          <TableCell align="right">Revenue Estimate</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {stockData.earnings.map((earning, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{new Date(earning.date).toLocaleDateString()}</TableCell>
+                            <TableCell align="right">${earning.eps.toFixed(2)}</TableCell>
+                            <TableCell align="right">${earning.epsEstimate.toFixed(2)}</TableCell>
+                            <TableCell align="right">${(earning.revenue / 1e9).toFixed(2)}B</TableCell>
+                            <TableCell align="right">${(earning.revenueEstimate / 1e9).toFixed(2)}B</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+
+              {/* Profile Information */}
+              {stockData.profile && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {stockData.profile.name}
+                  </Typography>
+                  <Typography variant="body1" paragraph>
+                    {stockData.profile.description}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Industry: {stockData.profile.industry}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Sector: {stockData.profile.sector}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Website: <a href={stockData.profile.website} target="_blank" rel="noopener noreferrer">{stockData.profile.website}</a>
+                  </Typography>
+                </Box>
+              )}
             </Paper>
           )}
         </Box>
