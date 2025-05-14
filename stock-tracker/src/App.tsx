@@ -439,7 +439,7 @@ function App() {
               mb: 4
             }}
           >
-            Stock Tracker
+            my name Yang
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
