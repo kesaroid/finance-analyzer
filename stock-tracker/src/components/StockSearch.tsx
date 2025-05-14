@@ -1,0 +1,87 @@
+import { useState, useEffect } from 'react';
+import { Box, TextField, Button, Typography, Autocomplete, CircularProgress } from '@mui/material';
+import type { SearchResult } from '../types';
+import { searchSymbols } from '../services/api';
+
+interface StockSearchProps {
+  onSearch: (ticker: string) => void;
+  loading: boolean;
+}
+
+export const StockSearch = ({ onSearch, loading }: StockSearchProps) => {
+  const [ticker, setTicker] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Debounce the search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (ticker) {
+        searchSymbols(ticker).then(setSearchResults);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [ticker]);
+
+  return (
+    <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+      <Autocomplete
+        fullWidth
+        options={searchResults}
+        getOptionLabel={(option) => `${option.symbol} - ${option.name}`}
+        loading={searchLoading}
+        inputValue={ticker}
+        onInputChange={(_, newValue) => setTicker(newValue)}
+        onChange={(_, newValue) => {
+          if (newValue) {
+            setTicker(newValue.symbol);
+            onSearch(newValue.symbol);
+          }
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Enter Ticker Symbol"
+            variant="outlined"
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
+        renderOption={(props, option) => (
+          <li {...props}>
+            <Box>
+              <Typography variant="body1">
+                {option.symbol} - {option.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {option.type} • {option.region} • {option.currency}
+              </Typography>
+            </Box>
+          </li>
+        )}
+      />
+      <Button
+        variant="contained"
+        onClick={() => onSearch(ticker)}
+        disabled={loading}
+        sx={{ 
+          backgroundColor: 'black',
+          '&:hover': {
+            backgroundColor: 'black',
+            opacity: 0.9
+          }
+        }}
+      >
+        {loading ? 'Loading...' : 'Search'}
+      </Button>
+    </Box>
+  );
+}; 
