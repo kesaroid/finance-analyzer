@@ -3,6 +3,8 @@ import { Box, TextField, Button, Typography, Autocomplete, CircularProgress } fr
 import type { SearchResult } from '../types';
 import { searchSymbols } from '../services/api';
 
+const disableSymbolSearch = import.meta.env.VITE_DISABLE_SYMBOL_SEARCH === 'true';
+
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
   loading: boolean;
@@ -25,63 +27,70 @@ export const StockSearch = ({ onSearch, loading }: StockSearchProps) => {
   }, [ticker]);
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-      <Autocomplete
-        fullWidth
-        options={searchResults}
-        getOptionLabel={(option) => `${option.symbol} - ${option.name}`}
-        loading={searchLoading}
-        inputValue={ticker}
-        onInputChange={(_, newValue) => setTicker(newValue)}
-        onChange={(_, newValue) => {
-          if (newValue) {
-            setTicker(newValue.symbol);
-            onSearch(newValue.symbol);
-          }
-        }}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Enter Ticker Symbol"
-            variant="outlined"
-            InputProps={{
-              ...params.InputProps,
-              endAdornment: (
-                <>
-                  {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                  {params.InputProps.endAdornment}
-                </>
-              ),
-            }}
-          />
-        )}
-        renderOption={(props, option) => (
-          <li {...props}>
-            <Box>
-              <Typography variant="body1">
-                {option.symbol} - {option.name}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {option.type} • {option.region} • {option.currency}
-              </Typography>
-            </Box>
-          </li>
-        )}
-      />
-      <Button
-        variant="contained"
-        onClick={() => onSearch(ticker)}
-        disabled={loading}
-        sx={{ 
-          backgroundColor: 'black',
-          '&:hover': {
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
+      {disableSymbolSearch && (
+        <Typography variant="body2" color="text.secondary" align="center">
+          Symbol search is disabled to conserve API credits. Please enter the exact ticker symbol.
+        </Typography>
+      )}
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Autocomplete
+          fullWidth
+          options={searchResults}
+          getOptionLabel={(option) => `${option.symbol} - ${option.name}`}
+          loading={searchLoading}
+          inputValue={ticker}
+          onInputChange={(_, newValue) => setTicker(newValue)}
+          onChange={(_, newValue) => {
+            if (newValue) {
+              setTicker(newValue.symbol);
+              onSearch(newValue.symbol);
+            }
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Enter Ticker Symbol"
+              variant="outlined"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+          renderOption={(props, option) => (
+            <li {...props}>
+              <Box>
+                <Typography variant="body1">
+                  {option.symbol} - {option.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {option.type} • {option.region} • {option.currency}
+                </Typography>
+              </Box>
+            </li>
+          )}
+        />
+        <Button
+          variant="contained"
+          onClick={() => onSearch(ticker)}
+          disabled={loading}
+          sx={{ 
             backgroundColor: 'black',
-            opacity: 0.9
-          }
-        }}
-      >
-        {loading ? 'Loading...' : 'Search'}
-      </Button>
+            '&:hover': {
+              backgroundColor: 'black',
+              opacity: 0.9
+            }
+          }}
+        >
+          {loading ? 'Loading...' : 'Search'}
+        </Button>
+      </Box>
     </Box>
   );
 }; 

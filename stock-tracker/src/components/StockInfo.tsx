@@ -285,54 +285,6 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
         </Box>
       )}
 
-      {/* Earnings Calendar (for stocks only) */}
-      {!stockData.isETF && stockData.earnings && stockData.earnings.length > 0 && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Earnings Calendar
-          </Typography>
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  {(() => {
-                    const earnings = stockData.earnings;
-                    const showEPS = earnings.some(e => !isNaN(e.eps));
-                    const showEPSEst = earnings.some(e => !isNaN(e.epsEstimate));
-                    const showRev = earnings.some(e => !isNaN(e.revenue));
-                    const showRevEst = earnings.some(e => !isNaN(e.revenueEstimate));
-                    return <>
-                      {showEPS && <TableCell align="right">EPS</TableCell>}
-                      {showEPSEst && <TableCell align="right">EPS Estimate</TableCell>}
-                      {showRev && <TableCell align="right">Revenue</TableCell>}
-                      {showRevEst && <TableCell align="right">Revenue Estimate</TableCell>}
-                    </>;
-                  })()}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {stockData.earnings.map((earning, index) => {
-                  const showEPS = !isNaN(earning.eps);
-                  const showEPSEst = !isNaN(earning.epsEstimate);
-                  const showRev = !isNaN(earning.revenue);
-                  const showRevEst = !isNaN(earning.revenueEstimate);
-                  return (
-                    <TableRow key={index}>
-                      <TableCell>{new Date(earning.date).toLocaleDateString()}</TableCell>
-                      {showEPS && <TableCell align="right">${earning.eps.toFixed(2)}</TableCell>}
-                      {showEPSEst && <TableCell align="right">${earning.epsEstimate.toFixed(2)}</TableCell>}
-                      {showRev && <TableCell align="right">${(earning.revenue / 1e9).toFixed(2)}B</TableCell>}
-                      {showRevEst && <TableCell align="right">${(earning.revenueEstimate / 1e9).toFixed(2)}B</TableCell>}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      )}
-
       {/* Profile Information */}
       {stockData.profile && (
         <Box sx={{ mt: 4 }}>

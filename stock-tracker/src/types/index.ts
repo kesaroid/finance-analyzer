@@ -82,13 +82,6 @@ export interface StockData {
       weight: string;
     }>;
   };
-  earnings: {
-    date: string;
-    eps: number;
-    epsEstimate: number;
-    revenue: number;
-    revenueEstimate: number;
-  }[];
 }
 
 export interface SearchResult {
