@@ -266,8 +266,9 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
                 <TableRow>
                   <TableCell>Fiscal Date</TableCell>
                   <TableCell align="right">Operating Cash Flow</TableCell>
-                  <TableCell align="right">Investing Cash Flow</TableCell>
-                  <TableCell align="right">Financing Cash Flow</TableCell>
+                  <TableCell align="right">Capital Expenditures</TableCell>
+                  <TableCell align="right">Free Cash Flow</TableCell>
+                  <TableCell align="right">Dividend Payout</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -275,8 +276,9 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
                   <TableRow key={idx}>
                     <TableCell>{row.fiscalDateEnding}</TableCell>
                     <TableCell align="right">${Number(row.operatingCashflow).toLocaleString()}</TableCell>
-                    <TableCell align="right">${Number(row.investingCashflow).toLocaleString()}</TableCell>
-                    <TableCell align="right">${Number(row.financingCashflow).toLocaleString()}</TableCell>
+                    <TableCell align="right">${Number(row.capitalExpenditures).toLocaleString()}</TableCell>
+                    <TableCell align="right">${Number(row.freeCashFlow).toLocaleString()}</TableCell>
+                    <TableCell align="right">${Number(row.dividendPayout).toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

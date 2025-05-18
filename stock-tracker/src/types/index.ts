@@ -101,6 +101,7 @@ export interface FinancialStatement {
   totalLiabilities?: string;
   totalShareholderEquity?: string;
   operatingCashflow?: string;
-  investingCashflow?: string;
-  financingCashflow?: string;
+  capitalExpenditures?: string;
+  freeCashFlow?: string;
+  dividendPayout?: string;
 } 
