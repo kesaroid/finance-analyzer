@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Table, TableContainer, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { StockData, FinancialStatement } from '../types';
+import { AnalystRatingsGraph } from './AnalystRatingsGraph';
 
 interface StockInfoProps {
   stockData: StockData;
@@ -169,6 +170,12 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
                   <TableCell align="right">{(stockData.fundamentals.dividendYield * 100).toFixed(2)}%</TableCell>
                 </TableRow>
                 <TableRow>
+                  <TableCell>EBITDA</TableCell>
+                  <TableCell align="right">${(stockData.fundamentals.ebitda / 1e9).toFixed(2)}B</TableCell>
+                  <TableCell>Profit Margin</TableCell>
+                  <TableCell align="right">{(stockData.fundamentals.profitMargin * 100).toFixed(2)}%</TableCell>
+                </TableRow>
+                <TableRow>
                   <TableCell>52 Week High</TableCell>
                   <TableCell align="right">${stockData.fundamentals.fiftyTwoWeekHigh.toFixed(2)}</TableCell>
                   <TableCell>52 Week Low</TableCell>
@@ -177,12 +184,12 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
                 <TableRow>
                   <TableCell>Revenue (TTM)</TableCell>
                   <TableCell align="right">${(stockData.fundamentals.revenue / 1e9).toFixed(2)}B</TableCell>
-                  <TableCell>Profit Margin</TableCell>
-                  <TableCell align="right">{(stockData.fundamentals.profitMargin * 100).toFixed(2)}%</TableCell>
-                </TableRow>
-                <TableRow>
                   <TableCell>Analyst Target Price</TableCell>
                   <TableCell align="right">${stockData.fundamentals.analystTargetPrice.toFixed(2)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>EV/Revenue</TableCell>
+                  <TableCell align="right">{stockData.fundamentals.evToRevenue.toFixed(2)}</TableCell>
                   <TableCell>Beta</TableCell>
                   <TableCell align="right">{stockData.fundamentals.beta.toFixed(2)}</TableCell>
                 </TableRow>
@@ -190,6 +197,11 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
             </Table>
           </TableContainer>
         </Box>
+      )}
+
+      {/* Analyst Ratings Graph */}
+      {!stockData.isETF && stockData.fundamentals?.analystRating && (
+        <AnalystRatingsGraph stockData={stockData} />
       )}
 
       {/* Income Statement (for stocks only) */}
@@ -272,15 +284,22 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
                 </TableRow>
               </TableHead>
               <TableBody>
-                {cashFlow.slice(0, 2).map((row, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{row.fiscalDateEnding}</TableCell>
-                    <TableCell align="right">${Number(row.operatingCashflow).toLocaleString()}</TableCell>
-                    <TableCell align="right">${Number(row.capitalExpenditures).toLocaleString()}</TableCell>
-                    <TableCell align="right">${Number(row.freeCashFlow).toLocaleString()}</TableCell>
-                    <TableCell align="right">${Number(row.dividendPayout).toLocaleString()}</TableCell>
-                  </TableRow>
-                ))}
+                {cashFlow.slice(0, 2).map((row, idx) => {
+                  const operatingCashFlow = Number(row.operatingCashflow) || 0;
+                  const capitalExpenditures = Number(row.capitalExpenditures) || 0;
+                  const calculatedFreeCashFlow = operatingCashFlow - capitalExpenditures;
+                  const freeCashFlow = row.freeCashFlow ? Number(row.freeCashFlow) : calculatedFreeCashFlow;
+                  
+                  return (
+                    <TableRow key={idx}>
+                      <TableCell>{row.fiscalDateEnding}</TableCell>
+                      <TableCell align="right">${operatingCashFlow.toLocaleString()}</TableCell>
+                      <TableCell align="right">${capitalExpenditures.toLocaleString()}</TableCell>
+                      <TableCell align="right">${freeCashFlow.toLocaleString()}</TableCell>
+                      <TableCell align="right">${Number(row.dividendPayout).toLocaleString()}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
