@@ -21,6 +21,19 @@ These notebooks provide the analytical foundation for the project, handling data
 The stock tracker application provides a sleek, real-time interface for monitoring market data:
 
 Key features visible in the interface:
+- Real-time stock scoring and analysis
+- Detailed financial metrics and ratios
+- Technical indicators and price trends
+- Market sentiment analysis
+- Competitive position evaluation
+
+![GOOGL Example](./assets/googl_example.png)
+
+Key features visible in the interface:
+- Advanced stock scoring AI system (0-10 scale)
+- Comprehensive financial analysis
+- Real-time price and volume data
+
 - Company profiles and fundamentals
 - Earnings calendar and financial metrics
 

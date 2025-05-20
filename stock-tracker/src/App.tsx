@@ -69,7 +69,7 @@ function App() {
               mb: 4
             }}
           >
-            my name Yang
+            that's my quant 📈
           </Typography>
           
           <StockSearch onSearch={handleSearch} loading={loading} />

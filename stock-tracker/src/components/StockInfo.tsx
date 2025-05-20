@@ -2,6 +2,7 @@ import { Box, Typography, Paper, Table, TableContainer, TableHead, TableBody, Ta
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { StockData, FinancialStatement } from '../types';
 import { AnalystRatingsGraph } from './AnalystRatingsGraph';
+import { StockScore } from './StockScore';
 
 interface StockInfoProps {
   stockData: StockData;
@@ -44,7 +45,12 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
                 fontSize: 32,
                 color: '#333',
               }}>
-                0
+                <StockScore 
+                  stockData={stockData} 
+                  incomeStatement={incomeStatement}
+                  balanceSheet={balanceSheet}
+                  cashFlow={cashFlow}
+                />
               </Box>
             </Box>
             <Typography
