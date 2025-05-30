@@ -110,7 +110,7 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
               "content": [
                 {
                   "type": "input_text",
-                  "text": "You are a financial analyst evaluating a stock based on fundamentals, profitability, growth, stability, and competitive advantage. \nGenerate a comprehensive score out of 10 based on the provided financial metrics.\n\nEvaluate the stock using the following scoring rubric:\n\n1. Valuation (Cheap) - 2 points\n    - P/E Ratio (1 point): Lower P/E gets higher score, with 20 or below = 1 point, 40 or above = 0 points\n    - EBITDA to Market Cap (1 point): Higher EBITDA relative to Market Cap gets a higher score\n\n2. Profitability - 2 points\n    - Profit Margin (0.8 points): Higher margins get higher scores, with 30% or above = 0.8 points\n    - Dividend Yield (0.6 points): Higher yields get higher scores, with 4% or above = 0.6 points\n    - EPS Growth (0.6 points): Higher growth gets higher scores, with 10% or above = 0.6 points\n\n3. Growth - 2 points\n    - Revenue Growth (1 point): Higher growth gets higher scores, with 10% or above = 1 point\n    - Operating Cash Flow Growth (1 point): Higher growth gets higher scores, with 10% or above = 1 point\n\n4. Stability - 2 points\n    - Market Cap (0.8 points): Larger market cap gets higher scores, with logarithmic scaling\n    - Beta (0.4 points): Scores highest when close to 1, lower for highly volatile or defensive stocks\n    - Brand & Leadership (0.8 points): Based on qualitative assessment of brand strength and leadership\n\n5. Financial Health - 2 points\n    - Assets to Liabilities Ratio (0.7 points): Higher ratio gets higher scores, with 1.2 or above = 0.7 points\n    - Operating Income to Revenue (0.7 points): Higher ratio gets higher scores, with 20% or above = 0.7 points\n    - Free Cash Flow to Revenue (0.6 points): Higher ratio gets higher scores, with 20% or above = 0.6 points\n\n6. Competitive Position - 2 points (derived from industry and sector information)\n    - Market Position (0.7 points): Based on the company's position in its industry\n    - Competitive Moat (0.7 points): Based on the company's competitive advantages\n    - Industry Growth Prospects (0.6 points): Based on industry growth outlook\n\nFor the Competitive Position category, please analyze the industry and sector information to:\n1. Identify the likely major competitors in this industry\n2. Determine potential competitive advantages (moat) based on the company's financials and industry\n3. Assess the company's market position relative to competitors\n4. Evaluate industry growth prospects\n\nPlease provide:\n1. A detailed breakdown of scores for each category\n2. A brief analysis of the company's competitive position and moat\n3. A list of any missing information that would improve the analysis\n4. Key strengths and weaknesses based on the scoring\n5. The total score out of 10 should be the last line of the response in the format {Score:X}\n\nThe user will provide the JSON"
+                  "text": "You are a financial analyst evaluating a stock based on fundamentals, profitability, growth, stability, and competitive advantage. \nGenerate a comprehensive score out of 10 based on the provided financial metrics.\n\nEvaluate the stock using the following scoring rubric:\n\n1. Valuation (Cheap) - 2 points\n    - P/E Ratio (1 point): Lower P/E gets higher score, with 20 or below = 1 point, 40 or above = 0 points\n    - EBITDA to Market Cap (1 point): Higher EBITDA relative to Market Cap gets a higher score\n\n2. Profitability - 2 points\n    - Profit Margin (0.8 points): Higher margins get higher scores, with 30% or above = 0.8 points\n    - Dividend Yield (0.6 points): Higher yields get higher scores, with 4% or above = 0.6 points\n    - EPS Growth (0.6 points): Higher growth gets higher scores, with 10% or above = 0.6 points\n\n3. Growth - 2 points\n    - Revenue Growth (1 point): Higher growth gets higher scores, with 10% or above = 1 point\n    - Operating Cash Flow Growth (1 point): Higher growth gets higher scores, with 10% or above = 1 point\n\n4. Stability - 2 points\n    - Market Cap (0.8 points): Larger market cap gets higher scores, with logarithmic scaling\n    - Beta (0.4 points): Scores highest when close to 1, lower for highly volatile or defensive stocks\n    - Brand & Leadership (0.8 points): Based on qualitative assessment of brand strength and leadership\n\n5. Financial Health - 2 points\n    - Assets to Liabilities Ratio (0.7 points): Higher ratio gets higher scores, with 1.2 or above = 0.7 points\n    - Operating Income to Revenue (0.7 points): Higher ratio gets higher scores, with 20% or above = 0.7 points\n    - Free Cash Flow to Revenue (0.6 points): Higher ratio gets higher scores, with 20% or above = 0.6 points\n\n6. Competitive Position - 2 points (derived from industry and sector information)\n    - Market Position (0.7 points): Based on the company's position in its industry\n    - Competitive Moat (0.7 points): Based on the company's competitive advantages\n    - Industry Growth Prospects (0.6 points): Based on industry growth outlook\n\nFor the Competitive Position category, please analyze the industry and sector information to:\n1. Identify the likely major competitors in this industry\n2. Determine potential competitive advantages (moat) based on the company's financials and industry\n3. Assess the company's market position relative to competitors\n4. Evaluate industry growth prospects\n\nPlease provide your analysis in the following JSON format:\n{\n  \"score\": number,\n  \"explanation\": string,\n  \"breakdown\": {\n    \"valuation\": number,\n    \"profitability\": number,\n    \"growth\": number,\n    \"stability\": number,\n    \"financialHealth\": number,\n    \"competitivePosition\": number\n  },\n  \"competitiveAnalysis\": string,\n  \"missingInfo\": string[],\n  \"strengths\": string[],\n  \"weaknesses\": string[]\n}\n\nThe score should be a number between 0 and 10."
                 }
               ]
             },
@@ -139,27 +139,26 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
 
         console.log('Raw API Response:', response);
         
-        const analysis = JSON.parse(response.output_text);
-        console.log('Parsed Analysis:', analysis);
+        let analysis;
+        try {
+          analysis = JSON.parse(response.output_text);
+          console.log('Parsed Analysis:', analysis);
+        } catch (err) {
+          console.error('Failed to parse API response:', err);
+          throw new Error('Invalid API response format');
+        }
 
-        // Extract the final score from the Total Score field
-        const finalScore = analysis["Total Score"] || analysis.Score || analysis.score;
-        setScore(finalScore);
-        setExplanation(analysis["Competitive Position Analysis"] || analysis.explanation || '');
-        setScoreBreakdown(
-          analysis.breakdown || {
-            valuation: analysis.Valuation?.["Total Valuation Score"] ?? analysis.valuation ?? 0,
-            profitability: analysis.Profitability?.["Total Profitability Score"] ?? analysis.profitability ?? 0,
-            growth: analysis.Growth?.["Total Growth Score"] ?? analysis.growth ?? 0,
-            stability: analysis.Stability?.["Total Stability Score"] ?? analysis.stability ?? 0,
-            financialHealth: analysis["Financial Health"]?.["Total Financial Health Score"] ?? analysis.financialHealth ?? 0,
-            competitivePosition: analysis["Competitive Position"]?.["Total Competitive Position Score"] ?? analysis.competitivePosition ?? 0
-          }
-        );
-        setCompetitiveAnalysis(analysis["Competitive Position Analysis"] || analysis.competitiveAnalysis || '');
-        setMissingInfo(analysis["Missing Information"] || analysis.missingInfo || []);
-        setStrengths(analysis["Key Strengths"] || analysis.strengths || []);
-        setWeaknesses(analysis["Key Weaknesses"] || analysis.weaknesses || []);
+        if (!analysis || typeof analysis.score !== 'number') {
+          throw new Error('Invalid score in API response');
+        }
+
+        setScore(analysis.score);
+        setExplanation(analysis.explanation || '');
+        setScoreBreakdown(analysis.breakdown);
+        setCompetitiveAnalysis(analysis.competitiveAnalysis || '');
+        setMissingInfo(analysis.missingInfo || []);
+        setStrengths(analysis.strengths || []);
+        setWeaknesses(analysis.weaknesses || []);
         setAnalysisData(analysis);
       } catch (err) {
         setError('Failed to calculate stock score. Please try again.');
@@ -213,13 +212,83 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Stock Analysis Details (Raw JSON)</DialogTitle>
+        <DialogTitle>Stock Analysis Details</DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ 
+            mt: 2,
+            maxHeight: '70vh',
+            overflowY: 'auto',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#888',
+              borderRadius: '4px',
+              '&:hover': {
+                background: '#555',
+              },
+            },
+          }}>
             {analysisData && (
-              <pre style={{ fontSize: 14, background: '#f5f5f5', padding: 16, borderRadius: 8, overflowX: 'auto' }}>
-                {JSON.stringify(analysisData, null, 2)}
-              </pre>
+              <Box sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>Overall Score</Typography>
+                <Typography variant="body1" sx={{ mb: 3 }}>{analysisData.score.toFixed(1)}/10</Typography>
+
+                <Typography variant="h6" gutterBottom>Explanation</Typography>
+                <Typography variant="body1" sx={{ mb: 3 }}>{analysisData.explanation}</Typography>
+
+                <Typography variant="h6" gutterBottom>Score Breakdown</Typography>
+                <Box sx={{ mb: 3 }}>
+                  {analysisData.breakdown && Object.entries(analysisData.breakdown).map(([key, value]) => (
+                    <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
+                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                      </Typography>
+                      <Typography variant="body1">{Number(value).toFixed(1)}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+
+                <Typography variant="h6" gutterBottom>Competitive Analysis</Typography>
+                <Typography variant="body1" sx={{ mb: 3 }}>{analysisData.competitiveAnalysis}</Typography>
+
+                {analysisData.strengths && analysisData.strengths.length > 0 && (
+                  <>
+                    <Typography variant="h6" gutterBottom>Strengths</Typography>
+                    <Box component="ul" sx={{ mb: 3, pl: 2 }}>
+                      {analysisData.strengths.map((strength: string, index: number) => (
+                        <Typography component="li" key={index} variant="body1">{strength}</Typography>
+                      ))}
+                    </Box>
+                  </>
+                )}
+
+                {analysisData.weaknesses && analysisData.weaknesses.length > 0 && (
+                  <>
+                    <Typography variant="h6" gutterBottom>Weaknesses</Typography>
+                    <Box component="ul" sx={{ mb: 3, pl: 2 }}>
+                      {analysisData.weaknesses.map((weakness: string, index: number) => (
+                        <Typography component="li" key={index} variant="body1">{weakness}</Typography>
+                      ))}
+                    </Box>
+                  </>
+                )}
+
+                {analysisData.missingInfo && analysisData.missingInfo.length > 0 && (
+                  <>
+                    <Typography variant="h6" gutterBottom>Missing Information</Typography>
+                    <Box component="ul" sx={{ mb: 3, pl: 2 }}>
+                      {analysisData.missingInfo.map((info: string, index: number) => (
+                        <Typography component="li" key={index} variant="body1">{info}</Typography>
+                      ))}
+                    </Box>
+                  </>
+                )}
+              </Box>
             )}
           </Box>
         </DialogContent>
