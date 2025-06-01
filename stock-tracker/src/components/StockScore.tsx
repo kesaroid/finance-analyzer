@@ -1,10 +1,154 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Typography, CircularProgress, Collapse, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { Box, Typography, CircularProgress, Collapse, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import OpenAI from "openai";
 import type { StockData, FinancialStatement } from '../types';
 
+const STOCK_ANALYSIS_PROMPT = `<stock_analysis>
+  <role>You are a financial analyst evaluating a stock based on fundamentals, profitability, growth, stability, and competitive advantage.</role>
+  
+  <task>Generate a comprehensive score out of 10 based on the provided financial metrics.</task>
+
+  <scoring_rubric>
+    <category name="Valuation" points="2">
+      <metric name="P/E Ratio" points="1">
+        <criteria>Lower P/E gets higher score</criteria>
+        <thresholds>
+          <threshold value="20" points="1">20 or below = 1 point</threshold>
+          <threshold value="40" points="0">40 or above = 0 points</threshold>
+        </thresholds>
+      </metric>
+      <metric name="EBITDA to Market Cap" points="1">
+        <criteria>Higher EBITDA relative to Market Cap gets a higher score</criteria>
+      </metric>
+    </category>
+
+    <category name="Profitability" points="2">
+      <metric name="Profit Margin" points="0.8">
+        <criteria>Higher margins get higher scores</criteria>
+        <thresholds>
+          <threshold value="30" points="0.8">30% or above = 0.8 points</threshold>
+        </thresholds>
+      </metric>
+      <metric name="Dividend Yield" points="0.6">
+        <criteria>Higher yields get higher scores</criteria>
+        <thresholds>
+          <threshold value="4" points="0.6">4% or above = 0.6 points</threshold>
+        </thresholds>
+      </metric>
+      <metric name="EPS Growth" points="0.6">
+        <criteria>Higher growth gets higher scores</criteria>
+        <thresholds>
+          <threshold value="10" points="0.6">10% or above = 0.6 points</threshold>
+        </thresholds>
+      </metric>
+    </category>
+
+    <category name="Growth" points="2">
+      <metric name="Revenue Growth" points="1">
+        <criteria>Higher growth gets higher scores</criteria>
+        <thresholds>
+          <threshold value="10" points="1">10% or above = 1 point</threshold>
+        </thresholds>
+      </metric>
+      <metric name="Operating Cash Flow Growth" points="1">
+        <criteria>Higher growth gets higher scores</criteria>
+        <thresholds>
+          <threshold value="10" points="1">10% or above = 1 point</threshold>
+        </thresholds>
+      </metric>
+    </category>
+
+    <category name="Stability" points="2">
+      <metric name="Market Cap" points="0.8">
+        <criteria>Larger market cap gets higher scores</criteria>
+        <note>Uses logarithmic scaling</note>
+      </metric>
+      <metric name="Beta" points="0.4">
+        <criteria>Scores highest when close to 1</criteria>
+        <note>Lower for highly volatile or defensive stocks</note>
+      </metric>
+      <metric name="Brand & Leadership" points="0.8">
+        <criteria>Based on qualitative assessment of brand strength and leadership</criteria>
+      </metric>
+    </category>
+
+    <category name="Financial Health" points="2">
+      <metric name="Assets to Liabilities Ratio" points="0.7">
+        <criteria>Higher ratio gets higher scores</criteria>
+        <thresholds>
+          <threshold value="1.2" points="0.7">1.2 or above = 0.7 points</threshold>
+        </thresholds>
+      </metric>
+      <metric name="Operating Income to Revenue" points="0.7">
+        <criteria>Higher ratio gets higher scores</criteria>
+        <thresholds>
+          <threshold value="20" points="0.7">20% or above = 0.7 points</threshold>
+        </thresholds>
+      </metric>
+      <metric name="Free Cash Flow to Revenue" points="0.6">
+        <criteria>Higher ratio gets higher scores</criteria>
+        <thresholds>
+          <threshold value="20" points="0.6">20% or above = 0.6 points</threshold>
+        </thresholds>
+      </metric>
+    </category>
+
+    <category name="Competitive Position" points="2">
+      <metric name="Market Position" points="0.7">
+        <criteria>Based on the company's position in its industry</criteria>
+      </metric>
+      <metric name="Competitive Moat" points="0.7">
+        <criteria>Based on the company's competitive advantages</criteria>
+      </metric>
+      <metric name="Industry Growth Prospects" points="0.6">
+        <criteria>Based on industry growth outlook</criteria>
+      </metric>
+    </category>
+  </scoring_rubric>
+
+  <competitive_analysis_requirements>
+    <requirement>Identify the likely major competitors in this industry</requirement>
+    <requirement>Determine potential competitive advantages (moat) based on the company's financials and industry</requirement>
+    <requirement>Assess the company's market position relative to competitors</requirement>
+    <requirement>Evaluate industry growth prospects</requirement>
+  </competitive_analysis_requirements>
+
+  <response_format>
+    <json_structure>
+      {
+        "score": number,
+        "explanation": string,
+        "breakdown": {
+          "valuation": number,
+          "profitability": number,
+          "growth": number,
+          "stability": number,
+          "financialHealth": number,
+          "competitivePosition": number
+        },
+        "competitiveAnalysis": string,
+        "missingInfo": string[],
+        "strengths": string[],
+        "weaknesses": string[],
+        "scoringTable": string
+      }
+    </json_structure>
+    <table_format>
+      | Category | Points Rewarded | Max Points | Details |
+      |----------|----------------|------------|---------|
+      | Valuation | number | 2 | P/E Ratio (1), EBITDA to Market Cap (1) |
+      | Profitability | number | 2 | Profit Margin (0.8), Dividend Yield (0.6), EPS Growth (0.6) |
+      | Growth | number | 2 | Revenue Growth (1), Operating Cash Flow Growth (1) |
+      | Stability | number | 2 | Market Cap (0.8), Beta (0.4), Brand & Leadership (0.8) |
+      | Financial Health | number | 2 | Assets/Liabilities (0.7), Operating Income/Revenue (0.7), FCF/Revenue (0.6) |
+      | Competitive Position | number | 2 | Market Position (0.7), Competitive Moat (0.7), Industry Growth (0.6) |
+      | **Total** | number | **10** | |
+    </table_format>
+    <note>The score should be a number between 0 and 10.</note>
+  </response_format>
+</stock_analysis>`;
 
 interface StockScoreProps {
   stockData: StockData;
@@ -110,7 +254,7 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
               "content": [
                 {
                   "type": "input_text",
-                  "text": "You are a financial analyst evaluating a stock based on fundamentals, profitability, growth, stability, and competitive advantage. \nGenerate a comprehensive score out of 10 based on the provided financial metrics.\n\nEvaluate the stock using the following scoring rubric:\n\n1. Valuation (Cheap) - 2 points\n    - P/E Ratio (1 point): Lower P/E gets higher score, with 20 or below = 1 point, 40 or above = 0 points\n    - EBITDA to Market Cap (1 point): Higher EBITDA relative to Market Cap gets a higher score\n\n2. Profitability - 2 points\n    - Profit Margin (0.8 points): Higher margins get higher scores, with 30% or above = 0.8 points\n    - Dividend Yield (0.6 points): Higher yields get higher scores, with 4% or above = 0.6 points\n    - EPS Growth (0.6 points): Higher growth gets higher scores, with 10% or above = 0.6 points\n\n3. Growth - 2 points\n    - Revenue Growth (1 point): Higher growth gets higher scores, with 10% or above = 1 point\n    - Operating Cash Flow Growth (1 point): Higher growth gets higher scores, with 10% or above = 1 point\n\n4. Stability - 2 points\n    - Market Cap (0.8 points): Larger market cap gets higher scores, with logarithmic scaling\n    - Beta (0.4 points): Scores highest when close to 1, lower for highly volatile or defensive stocks\n    - Brand & Leadership (0.8 points): Based on qualitative assessment of brand strength and leadership\n\n5. Financial Health - 2 points\n    - Assets to Liabilities Ratio (0.7 points): Higher ratio gets higher scores, with 1.2 or above = 0.7 points\n    - Operating Income to Revenue (0.7 points): Higher ratio gets higher scores, with 20% or above = 0.7 points\n    - Free Cash Flow to Revenue (0.6 points): Higher ratio gets higher scores, with 20% or above = 0.6 points\n\n6. Competitive Position - 2 points (derived from industry and sector information)\n    - Market Position (0.7 points): Based on the company's position in its industry\n    - Competitive Moat (0.7 points): Based on the company's competitive advantages\n    - Industry Growth Prospects (0.6 points): Based on industry growth outlook\n\nFor the Competitive Position category, please analyze the industry and sector information to:\n1. Identify the likely major competitors in this industry\n2. Determine potential competitive advantages (moat) based on the company's financials and industry\n3. Assess the company's market position relative to competitors\n4. Evaluate industry growth prospects\n\nPlease provide your analysis in the following JSON format:\n{\n  \"score\": number,\n  \"explanation\": string,\n  \"breakdown\": {\n    \"valuation\": number,\n    \"profitability\": number,\n    \"growth\": number,\n    \"stability\": number,\n    \"financialHealth\": number,\n    \"competitivePosition\": number\n  },\n  \"competitiveAnalysis\": string,\n  \"missingInfo\": string[],\n  \"strengths\": string[],\n  \"weaknesses\": string[]\n}\n\nThe score should be a number between 0 and 10."
+                  "text": STOCK_ANALYSIS_PROMPT
                 }
               ]
             },
@@ -241,17 +385,48 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
                 <Typography variant="h6" gutterBottom>Explanation</Typography>
                 <Typography variant="body1" sx={{ mb: 3 }}>{analysisData.explanation}</Typography>
 
-                <Typography variant="h6" gutterBottom>Score Breakdown</Typography>
-                <Box sx={{ mb: 3 }}>
-                  {analysisData.breakdown && Object.entries(analysisData.breakdown).map(([key, value]) => (
-                    <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </Typography>
-                      <Typography variant="body1">{Number(value).toFixed(1)}</Typography>
-                    </Box>
-                  ))}
-                </Box>
+                {analysisData.scoringTable && (
+                  <>
+                    <Typography variant="h6" gutterBottom>Detailed Scoring</Typography>
+                    <TableContainer component={Paper} sx={{ mb: 3 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Category</TableCell>
+                            <TableCell align="right">Points Rewarded</TableCell>
+                            <TableCell align="right">Max Points</TableCell>
+                            <TableCell>Details</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {Object.entries(analysisData.breakdown).map(([category, points]) => (
+                            <TableRow key={category}>
+                              <TableCell component="th" scope="row" sx={{ textTransform: 'capitalize' }}>
+                                {category.replace(/([A-Z])/g, ' $1').trim()}
+                              </TableCell>
+                              <TableCell align="right">{Number(points).toFixed(1)}</TableCell>
+                              <TableCell align="right">2</TableCell>
+                              <TableCell>
+                                {category === 'valuation' && 'P/E Ratio (1), EBITDA to Market Cap (1)'}
+                                {category === 'profitability' && 'Profit Margin (0.8), Dividend Yield (0.6), EPS Growth (0.6)'}
+                                {category === 'growth' && 'Revenue Growth (1), Operating Cash Flow Growth (1)'}
+                                {category === 'stability' && 'Market Cap (0.8), Beta (0.4), Brand & Leadership (0.8)'}
+                                {category === 'financialHealth' && 'Assets/Liabilities (0.7), Operating Income/Revenue (0.7), FCF/Revenue (0.6)'}
+                                {category === 'competitivePosition' && 'Market Position (0.7), Competitive Moat (0.7), Industry Growth (0.6)'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow>
+                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold' }}>{analysisData.score.toFixed(1)}</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold' }}>10</TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
 
                 <Typography variant="h6" gutterBottom>Competitive Analysis</Typography>
                 <Typography variant="body1" sx={{ mb: 3 }}>{analysisData.competitiveAnalysis}</Typography>
