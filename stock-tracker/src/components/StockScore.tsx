@@ -16,7 +16,7 @@ const STOCK_ANALYSIS_PROMPT = `<stock_analysis>
         <criteria>Lower P/E gets higher score</criteria>
         <thresholds>
           <threshold value="20" points="1">20 or below = 1 point</threshold>
-          <threshold value="40" points="0">40 or above = 0 points</threshold>
+          <threshold value="80" points="0">80 or above = 0 points</threshold>
         </thresholds>
       </metric>
       <metric name="EBITDA to Market Cap" points="1">
@@ -187,14 +187,19 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
   const [expanded, setExpanded] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
-  const calledRef = useRef(false);
 
   useEffect(() => {
-    if (calledRef.current) return;
-    calledRef.current = true;
     const calculateScore = async () => {
       setLoading(true);
       setError('');
+      setScore(null);
+      setExplanation('');
+      setScoreBreakdown(undefined);
+      setCompetitiveAnalysis('');
+      setMissingInfo([]);
+      setStrengths([]);
+      setWeaknesses([]);
+      setAnalysisData(null);
 
       try {
         // Get the most recent and previous year's data
@@ -247,7 +252,7 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
         });
 
         const response = await client.responses.create({
-          model: "gpt-4.1-mini",
+          model: "gpt-4.1",
           input: [
             {
               "role": "system",
