@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-import { Container, Typography, Box, IconButton, Button } from '@mui/material'
+import { Container, Typography, Box, IconButton, Button, Chip } from '@mui/material'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import AddIcon from '@mui/icons-material/Add'
 import HomeIcon from '@mui/icons-material/Home'
+import LinkIcon from '@mui/icons-material/Link'
 import BackgroundGraph from './components/BackgroundGraph'
 import { TickerTape } from './components/TickerTape'
 import { StockSearch } from './components/StockSearch'
 import { StockInfo } from './components/StockInfo'
 import { HelpDialog } from './components/HelpDialog'
+import { RelatedStocks } from './components/RelatedStocks'
 import type { StockData, FinancialStatement } from './types'
 import { fetchStockData } from './services/api'
 
@@ -129,7 +131,7 @@ function App() {
             that's my quant 📈
           </Typography>
           
-          <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 4, justifyContent: 'center' }}>
             <StockSearch 
               onSearch={handleSearch} 
               loading={loading} 
@@ -173,6 +175,7 @@ function App() {
                   minWidth: { xs: '95vw', sm: '500px', md: '600px', lg: '700px' },
                   maxWidth: { xs: '95vw', sm: '500px', md: '600px', lg: '700px' },
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'stretch',
                   transition: 'margin 0.4s cubic-bezier(0.4,0,0.2,1)',
                 }}
@@ -182,6 +185,10 @@ function App() {
                   incomeStatement={panel.incomeStatement}
                   balanceSheet={panel.balanceSheet}
                   cashFlow={panel.cashFlow}
+                />
+                <RelatedStocks
+                  ticker={panel.stockData.symbol}
+                  onStockSelect={handleSearch}
                 />
               </Box>
             ))}
