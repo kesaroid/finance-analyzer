@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, Button, Chip, Typography } from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';
+import { StockNews } from './StockNews';
 
 interface RelatedStocksProps {
   ticker: string;
@@ -33,6 +34,7 @@ export const RelatedStocks = ({ ticker, onStockSelect }: RelatedStocksProps) => 
   return (
     <Box sx={{ mt: 2, borderTop: '1px solid #eee', pt: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <StockNews ticker={ticker} />
         <Button
           variant="outlined"
           size="small"
