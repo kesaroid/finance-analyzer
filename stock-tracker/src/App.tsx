@@ -185,9 +185,6 @@ function App() {
                   incomeStatement={panel.incomeStatement}
                   balanceSheet={panel.balanceSheet}
                   cashFlow={panel.cashFlow}
-                />
-                <RelatedStocks
-                  ticker={panel.stockData.symbol}
                   onStockSelect={handleSearch}
                 />
               </Box>

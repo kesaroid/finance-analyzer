@@ -3,15 +3,17 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { StockData, FinancialStatement } from '../types';
 import { AnalystRatingsGraph } from './AnalystRatingsGraph';
 import { StockScore } from './StockScore';
+import { RelatedStocks } from './RelatedStocks';
 
 interface StockInfoProps {
   stockData: StockData;
   incomeStatement: FinancialStatement[];
   balanceSheet: FinancialStatement[];
   cashFlow: FinancialStatement[];
+  onStockSelect: (ticker: string) => void;
 }
 
-export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }: StockInfoProps) => {
+export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow, onStockSelect }: StockInfoProps) => {
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
       {/* Logo and Basic Info */}
@@ -346,6 +348,9 @@ export const StockInfo = ({ stockData, incomeStatement, balanceSheet, cashFlow }
           )}
         </Box>
       )}
+
+      {/* Related Stocks and News */}
+      <RelatedStocks ticker={stockData.symbol} onStockSelect={onStockSelect} />
     </Paper>
   );
 }; 

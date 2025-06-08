@@ -3,6 +3,7 @@ import type { SearchResult, StockData, FinancialStatement } from '../types';
 
 const alphaVantageKey = import.meta.env.VITE_ALPHA_VANTAGE_API_KEY;
 const twelveDataKey = import.meta.env.VITE_TWELVE_DATA_API_KEY;
+const polygonKey = import.meta.env.VITE_POLYGON_API_KEY;
 const disableSymbolSearch = import.meta.env.VITE_DISABLE_SYMBOL_SEARCH === 'true';
 
 export const searchSymbols = async (query: string): Promise<SearchResult[]> => {
@@ -50,7 +51,7 @@ export const fetchStockData = async (ticker: string): Promise<{
   balanceSheet: FinancialStatement[];
   cashFlow: FinancialStatement[];
 }> => {
-  if (!alphaVantageKey || !twelveDataKey) {
+  if (!alphaVantageKey || !twelveDataKey || !polygonKey) {
     throw new Error('API keys not found');
   }
 
@@ -69,21 +70,24 @@ export const fetchStockData = async (ticker: string): Promise<{
     const isETF = etfData && etfData.net_assets && (etfData.sectors || etfData.holdings);
 
     let overviewData;
+    let polygonData;
 
     if (isETF) {
       overviewData = etfData;
     } else {
       // Fetch company overview and financial statements for stocks
-      const [overviewResponse, incomeResponse, balanceResponse, cashflowResponse] = await Promise.all([
+      const [overviewResponse, incomeResponse, balanceResponse, cashflowResponse, polygonResponse] = await Promise.all([
         axios.get(`https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${alphaVantageKey}`),
         axios.get(`https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=${ticker}&apikey=${alphaVantageKey}`),
         axios.get(`https://www.alphavantage.co/query?function=BALANCE_SHEET&symbol=${ticker}&apikey=${alphaVantageKey}`),
-        axios.get(`https://www.alphavantage.co/query?function=CASH_FLOW&symbol=${ticker}&apikey=${alphaVantageKey}`)
+        axios.get(`https://www.alphavantage.co/query?function=CASH_FLOW&symbol=${ticker}&apikey=${alphaVantageKey}`),
+        axios.get(`https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${polygonKey}`)
       ]);
       overviewData = overviewResponse.data;
       incomeStatement = incomeResponse.data.annualReports || [];
       balanceSheet = balanceResponse.data.annualReports || [];
       cashFlow = cashflowResponse.data.annualReports || [];
+      polygonData = polygonResponse.data;
     }
 
     if (overviewData.Note) {
@@ -138,7 +142,7 @@ export const fetchStockData = async (ticker: string): Promise<{
         latestQuarter: ''
       } : {
         name: overviewData.Name,
-        description: overviewData.Description,
+        description: polygonData?.results?.description || overviewData.Description,
         industry: overviewData.Industry,
         sector: overviewData.Sector,
         website: overviewData.Website,

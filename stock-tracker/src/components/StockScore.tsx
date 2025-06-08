@@ -188,8 +188,21 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
   const [dialogOpen, setDialogOpen] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
 
+  const disableAIScoring = import.meta.env.VITE_DISABLE_AI_SCORING === 'true';
+
   useEffect(() => {
     const calculateScore = async () => {
+      // If AI scoring is disabled, do not call the API
+      if (disableAIScoring) {
+        setScore(null);
+        return;
+      }
+      // If fundamentals are not loaded, don't calculate score
+      if (!stockData.fundamentals) {
+        setScore(null);
+        return;
+      }
+
       setLoading(true);
       setError('');
       setScore(null);
@@ -320,7 +333,7 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
     if (stockData) {
       calculateScore();
     }
-  }, [stockData]);
+  }, [stockData, incomeStatement, balanceSheet, cashFlow]);
 
   if (loading) {
     return (
@@ -336,6 +349,14 @@ export const StockScore: React.FC<StockScoreProps> = ({ stockData, incomeStateme
         {error}
       </Typography>
     );
+  }
+
+  if (disableAIScoring) {
+    return <Typography variant="h6">🪫</Typography>;
+  }
+
+  if (!stockData.fundamentals) {
+    return <Typography variant="h6">📭</Typography>;
   }
 
   if (!score) {
